@@ -43,9 +43,13 @@ struct Translator {
 
     private static let authHeaderCandidates = [
         { (key: String) in ("Authorization", "Bearer \(key)") },
+        { (key: String) in ("Authorization", "Token \(key)") },
         { (key: String) in ("X-API-KEY", key) },
         { (key: String) in ("Api-Key", key) },
-        { (key: String) in ("x-api-key", key) }
+        { (key: String) in ("x-api-key", key) },
+        { (key: String) in ("X-Token", key) },
+        { (key: String) in ("x-token", key) },
+        { (key: String) in ("X-OpenAI-Api-Key", key) }
     ]
 
     static func translate(word: String) async throws -> TranslationResult {
@@ -89,12 +93,20 @@ Reply ONLY in this exact format (two lines, no extra text):
             "model": model,
             "input": word
         ]
+        let altInputsBody: [String: Any] = [
+            "model": model,
+            "inputs": [word]
+        ]
+        let altInstancesBody: [String: Any] = [
+            "model": model,
+            "instances": [["input": word]]
+        ]
         let altDataBody: [String: Any] = [
             "model": model,
             "data": ["messages": [["role": "user", "content": word]]]
         ]
 
-        let bodyVariants: [[String: Any]] = [baseBody, altPromptBody, altInputBody, altDataBody]
+        let bodyVariants: [[String: Any]] = [baseBody, altPromptBody, altInputBody, altInputsBody, altInstancesBody, altDataBody]
 
         var lastErrorMessages: [String] = []
 
