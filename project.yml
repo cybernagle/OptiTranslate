@@ -1,0 +1,21 @@
+name: OptiTranslate
+
+options:
+  bundleIdPrefix: com.cybernagle
+  deploymentTarget:
+    macOS: "13.0"
+
+targets:
+  OptiTranslate:
+    type: application
+    platform: macOS
+    deploymentTarget: "13.0"
+    sources:
+      - path: OptiTranslate
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.cybernagle.OptiTranslate
+        SWIFT_VERSION: "5.9"
+        ENABLE_PREVIEWS: YES
+    info:
+      path: OptiTranslate/Info.plist
