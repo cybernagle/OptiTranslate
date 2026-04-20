@@ -69,7 +69,8 @@ Reply ONLY in this exact format (two lines, no extra text):
 例句: <one vivid, slightly exaggerated English sentence showing the word in a software/engineering context, followed by its Chinese translation in parentheses>
 """
 
-        let bodyDict: [String: Any] = [
+        // Prepare several plausible request bodies (OpenAI-style + BigModel-friendly variants)
+        let baseBody: [String: Any] = [
             "model": model,
             "messages": [
                 ["role": "system", "content": system],
@@ -78,55 +79,81 @@ Reply ONLY in this exact format (two lines, no extra text):
             "max_tokens": 300,
             "temperature": 0.7
         ]
-        let httpBody = try JSONSerialization.data(withJSONObject: bodyDict)
+        let altPromptBody: [String: Any] = [
+            "model": model,
+            "prompt": word,
+            "max_tokens": 300,
+            "temperature": 0.7
+        ]
+        let altInputBody: [String: Any] = [
+            "model": model,
+            "input": word
+        ]
+        let altDataBody: [String: Any] = [
+            "model": model,
+            "data": ["messages": [["role": "user", "content": word]]]
+        ]
+
+        let bodyVariants: [[String: Any]] = [baseBody, altPromptBody, altInputBody, altDataBody]
 
         var lastErrorMessages: [String] = []
-        for url in urls {
-            for auth in authHeaderCandidates {
-                var req = URLRequest(url: url)
-                req.httpMethod = "POST"
-                req.addValue(auth(key).0, forHTTPHeaderField: auth(key).0) // placeholder, will fix below
-            }
-        }
 
-        // Actually perform requests, trying auth header variants
         for url in urls {
             for authMaker in authHeaderCandidates {
-                var req = URLRequest(url: url)
-                req.httpMethod = "POST"
                 let (hName, hValue) = authMaker(key)
-                req.setValue(hValue, forHTTPHeaderField: hName)
-                req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-                req.timeoutInterval = 30
-                req.httpBody = httpBody
+                for body in bodyVariants {
+                    var req = URLRequest(url: url)
+                    req.httpMethod = "POST"
+                    req.setValue(hValue, forHTTPHeaderField: hName)
+                    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+                    req.timeoutInterval = 30
 
-                do {
-                    let (data, resp) = try await URLSession.shared.data(for: req)
-                    if let http = resp as? HTTPURLResponse, http.statusCode >= 400 {
-                        let s = String(data: data, encoding: .utf8) ?? "HTTP \(http.statusCode)"
-                        lastErrorMessages.append("\(url) [\(hName)]: \(s)")
+                    do {
+                        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+                    } catch {
+                        lastErrorMessages.append("serialize-error for url=\(url) bodyKeys=\(Array(body.keys)): \(error.localizedDescription)")
                         continue
                     }
-                    struct Msg: Decodable { let content: String }
-                    struct Choice: Decodable { let message: Msg }
-                    struct Resp: Decodable { let choices: [Choice] }
-                    let decoded = try? JSONDecoder().decode(Resp.self, from: data)
-                    let raw = decoded?.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines) ?? String(data: data, encoding: .utf8) ?? ""
 
-                    var meaning = ""
-                    var example = ""
-                    for line in raw.components(separatedBy: "\n") {
-                        if line.hasPrefix("释义:") {
-                            meaning = String(line.dropFirst("释义:".count)).trimmingCharacters(in: .whitespaces)
-                        } else if line.hasPrefix("例句:") {
-                            example = String(line.dropFirst("例句:".count)).trimmingCharacters(in: .whitespaces)
+                    do {
+                        let (data, resp) = try await URLSession.shared.data(for: req)
+                        if let http = resp as? HTTPURLResponse, http.statusCode >= 400 {
+                            let s = String(data: data, encoding: .utf8) ?? "HTTP \(http.statusCode)"
+                            lastErrorMessages.append("\(url) [\(hName)] bodyKeys=\(Array(body.keys)): \(s)")
+                            continue
                         }
+
+                        // Try parse OpenAI-style response first
+                        struct Msg: Decodable { let content: String }
+                        struct Choice: Decodable { let message: Msg }
+                        struct Resp: Decodable { let choices: [Choice] }
+
+                        let decoded = try? JSONDecoder().decode(Resp.self, from: data)
+                        var raw = decoded?.choices.first?.message.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                            ?? String(data: data, encoding: .utf8)
+                            ?? ""
+
+                        // If provider returns a JSON with text at top-level, try to extract
+                        if raw.isEmpty, let text = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                            if let t = text["text"] as? String { raw = t }
+                            else if let t = text["response"] as? String { raw = t }
+                        }
+
+                        var meaning = ""
+                        var example = ""
+                        for line in raw.components(separatedBy: "\n") {
+                            if line.hasPrefix("释义:") {
+                                meaning = String(line.dropFirst("释义:".count)).trimmingCharacters(in: .whitespaces)
+                            } else if line.hasPrefix("例句:") {
+                                example = String(line.dropFirst("例句:".count)).trimmingCharacters(in: .whitespaces)
+                            }
+                        }
+                        if meaning.isEmpty { meaning = raw }
+                        return TranslationResult(meaning: meaning, example: example)
+                    } catch {
+                        lastErrorMessages.append("\(url) [\(hName)] bodyKeys=\(Array(body.keys)): \(error.localizedDescription)")
+                        continue
                     }
-                    if meaning.isEmpty { meaning = raw }
-                    return TranslationResult(meaning: meaning, example: example)
-                } catch {
-                    lastErrorMessages.append("\(url) [\(authMaker(key).0)]: \(error.localizedDescription)")
-                    continue
                 }
             }
         }
