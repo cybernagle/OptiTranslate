@@ -10,7 +10,27 @@ struct TranslationResult {
     let example: String
 }
 
+extension String {
+    func trimmingTrailingSlash() -> String {
+        if self.hasSuffix("/") { return String(self.dropLast()) }
+        return self
+    }
+}
+
 struct Translator {
+    /// Build a compatible OpenAI-style chat completions URL for some providers.
+    /// If the user supplies the generic BigModel PaaS root (e.g. https://open.bigmodel.cn/api/paas/v4)
+    /// this returns the OpenAI-compatible path used by BigModel: /openai/v1/chat/completions
+    private static func normalizeAPIURL(_ rawURL: String) -> URL? {
+        var s = rawURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        if s.isEmpty { return nil }
+        // If it looks like BigModel PaaS base, append OpenAI-compatible suffix when missing
+        if s.contains("open.bigmodel.cn") && !s.contains("/openai/") {
+            s = s.trimmingTrailingSlash() + "/openai/v1/chat/completions"
+        }
+        return URL(string: s)
+    }
+
     static func translate(word: String) async throws -> TranslationResult {
         let key = UserDefaults.standard.string(forKey: "openai_api_key")
             ?? ProcessInfo.processInfo.environment["OPENAI_API_KEY"]
@@ -22,7 +42,7 @@ struct Translator {
         let model = UserDefaults.standard.string(forKey: "openai_model")
             ?? "gpt-4o-mini"
 
-        guard let url = URL(string: rawURL) else {
+        guard let url = normalizeAPIURL(rawURL) else {
             throw TranslatorError.apiError("Invalid API URL: \(rawURL)")
         }
 
@@ -38,6 +58,7 @@ Reply ONLY in this exact format (two lines, no extra text):
 释义: <concise Chinese meaning, include the part-of-speech tag e.g. [n.] [v.] [adj.]>
 例句: <one vivid, slightly exaggerated English sentence showing the word in a software/engineering context, followed by its Chinese translation in parentheses>
 """
+        // Build OpenAI-compatible body
         let body: [String: Any] = [
             "model": model,
             "messages": [
@@ -57,6 +78,7 @@ Reply ONLY in this exact format (two lines, no extra text):
         struct Msg: Decodable { let content: String }
         struct Choice: Decodable { let message: Msg }
         struct Resp: Decodable { let choices: [Choice] }
+
         let raw = (try? JSONDecoder().decode(Resp.self, from: data))?
             .choices.first?.message.content
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
