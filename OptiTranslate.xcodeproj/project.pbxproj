@@ -9,19 +9,21 @@
 /* Begin PBXBuildFile section */
 		58E9D6EFB8BCF6737902A2C4 /* Translator.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5DDB00D671D94DCDCA61AA /* Translator.swift */; };
 		846D84B8BABD33979C7F8D5B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5741F696EBEE5EB760FDB83D /* ContentView.swift */; };
-		BCFA391832662D0A72B04CC6 /* README-usage.md in Resources */ = {isa = PBXBuildFile; fileRef = F7C0A76DD8FFC80C37045DDA /* README-usage.md */; };
+		CB6244EBCC997CC2B75E93CE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DF30FE4AE12AA8E4F0F4357 /* SettingsView.swift */; };
+		CDA6DE491A2139DB16DAE106 /* TranslationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C12E536E44BF8752196D227 /* TranslationStore.swift */; };
 		E86B6F39F77093E17E41602D /* OptiTranslateApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A14281D672CD91CD5179F33D /* OptiTranslateApp.swift */; };
 		F7F8A8DD35A827205DAB6D40 /* StatusBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40430AC0E8F7AE751718EB76 /* StatusBarController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0C12E536E44BF8752196D227 /* TranslationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslationStore.swift; sourceTree = "<group>"; };
 		240DD52B9B04A33AFB2D1BDE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		40430AC0E8F7AE751718EB76 /* StatusBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBarController.swift; sourceTree = "<group>"; };
 		5741F696EBEE5EB760FDB83D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		8DF30FE4AE12AA8E4F0F4357 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		A14281D672CD91CD5179F33D /* OptiTranslateApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptiTranslateApp.swift; sourceTree = "<group>"; };
 		AD5DDB00D671D94DCDCA61AA /* Translator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Translator.swift; sourceTree = "<group>"; };
 		F13B99A91BD9B5A9220EDBAF /* OptiTranslate.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OptiTranslate.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		F7C0A76DD8FFC80C37045DDA /* README-usage.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "README-usage.md"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -39,8 +41,9 @@
 				5741F696EBEE5EB760FDB83D /* ContentView.swift */,
 				240DD52B9B04A33AFB2D1BDE /* Info.plist */,
 				A14281D672CD91CD5179F33D /* OptiTranslateApp.swift */,
-				F7C0A76DD8FFC80C37045DDA /* README-usage.md */,
+				8DF30FE4AE12AA8E4F0F4357 /* SettingsView.swift */,
 				40430AC0E8F7AE751718EB76 /* StatusBarController.swift */,
+				0C12E536E44BF8752196D227 /* TranslationStore.swift */,
 				AD5DDB00D671D94DCDCA61AA /* Translator.swift */,
 			);
 			path = OptiTranslate;
@@ -62,7 +65,6 @@
 			buildConfigurationList = C304DB429CEC13690C3BAF50 /* Build configuration list for PBXNativeTarget "OptiTranslate" */;
 			buildPhases = (
 				748B8331F0A38167020028F6 /* Sources */,
-				BBCEBF949932CC0EBEA7EA63 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -105,17 +107,6 @@
 		};
 /* End PBXProject section */
 
-/* Begin PBXResourcesBuildPhase section */
-		BBCEBF949932CC0EBEA7EA63 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				BCFA391832662D0A72B04CC6 /* README-usage.md in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
-
 /* Begin PBXSourcesBuildPhase section */
 		748B8331F0A38167020028F6 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -123,7 +114,9 @@
 			files = (
 				846D84B8BABD33979C7F8D5B /* ContentView.swift in Sources */,
 				E86B6F39F77093E17E41602D /* OptiTranslateApp.swift in Sources */,
+				CB6244EBCC997CC2B75E93CE /* SettingsView.swift in Sources */,
 				F7F8A8DD35A827205DAB6D40 /* StatusBarController.swift in Sources */,
+				CDA6DE491A2139DB16DAE106 /* TranslationStore.swift in Sources */,
 				58E9D6EFB8BCF6737902A2C4 /* Translator.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

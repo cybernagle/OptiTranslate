@@ -3,17 +3,19 @@ import SwiftUI
 @main
 struct OptiTranslateApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     var body: some Scene {
-        Settings {
-            EmptyView()
-        }
+        Settings { EmptyView() }
     }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var statusController: StatusBarController?
+    private var statusController: StatusBarController?
+    private var store: TranslationStore?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        statusController = StatusBarController()
+        let s = TranslationStore()
+        store = s
+        statusController = StatusBarController(store: s)
     }
 }
