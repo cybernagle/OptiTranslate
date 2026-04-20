@@ -17,7 +17,15 @@ struct Translator {
             ?? ""
         guard !key.isEmpty else { throw TranslatorError.missingAPIKey }
 
-        let url = URL(string: "https://api.openai.com/v1/chat/completions")!
+        let rawURL = UserDefaults.standard.string(forKey: "openai_api_url")
+            ?? "https://api.openai.com/v1/chat/completions"
+        let model = UserDefaults.standard.string(forKey: "openai_model")
+            ?? "gpt-4o-mini"
+
+        guard let url = URL(string: rawURL) else {
+            throw TranslatorError.apiError("Invalid API URL: \(rawURL)")
+        }
+
         var req = URLRequest(url: url)
         req.httpMethod = "POST"
         req.addValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
@@ -30,13 +38,12 @@ Reply ONLY in this exact format (two lines, no extra text):
 释义: <concise Chinese meaning, include the part-of-speech tag e.g. [n.] [v.] [adj.]>
 例句: <one vivid, slightly exaggerated English sentence showing the word in a software/engineering context, followed by its Chinese translation in parentheses>
 """
-        let messages: [[String: String]] = [
-            ["role": "system", "content": system],
-            ["role": "user", "content": word]
-        ]
         let body: [String: Any] = [
-            "model": "gpt-4o-mini",
-            "messages": messages,
+            "model": model,
+            "messages": [
+                ["role": "system", "content": system],
+                ["role": "user", "content": word]
+            ],
             "max_tokens": 300,
             "temperature": 0.7
         ]
@@ -44,14 +51,14 @@ Reply ONLY in this exact format (two lines, no extra text):
 
         let (data, resp) = try await URLSession.shared.data(for: req)
         if let http = resp as? HTTPURLResponse, http.statusCode >= 400 {
-            throw TranslatorError.apiError(String(data: data, encoding: .utf8) ?? "")
+            throw TranslatorError.apiError(String(data: data, encoding: .utf8) ?? "HTTP \(http.statusCode)")
         }
 
         struct Msg: Decodable { let content: String }
         struct Choice: Decodable { let message: Msg }
         struct Resp: Decodable { let choices: [Choice] }
-        let decoded = try JSONDecoder().decode(Resp.self, from: data)
-        let raw = decoded.choices.first?.message.content
+        let raw = (try? JSONDecoder().decode(Resp.self, from: data))?
+            .choices.first?.message.content
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
         var meaning = ""
