@@ -1,34 +1,36 @@
 import Foundation
 import AppKit
 
-/// Shared state between StatusBarController and ContentView.
 @MainActor
 final class TranslationStore: ObservableObject {
-    @Published var original: String = ""
-    @Published var translation: String = ""
-    @Published var translationExample: String = ""
+    @Published var wordInput: String = ""
+    @Published var meaning: String = ""
+    @Published var example: String = ""
     @Published var isTranslating = false
     @Published var savedMessage: String = ""
 
     func translate() async {
-        guard !original.isEmpty else { return }
+        let word = wordInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !word.isEmpty else { return }
         isTranslating = true
-        translation = ""
-        translationExample = ""
+        meaning = ""
+        example = ""
         defer { isTranslating = false }
         do {
-            let result = try await Translator.translate(text: original)
-            translation = result.meaning
-            translationExample = result.example
+            let result = try await Translator.translate(word: word)
+            meaning = result.meaning
+            example = result.example
         } catch TranslatorError.missingAPIKey {
-            translation = "⚠️ 请先在设置中填入 OpenAI API Key"
+            meaning = "⚠️ 请先在设置中填入 OpenAI API Key（点右上角 ⚙️）"
         } catch {
-            translation = "翻译失败: \(error.localizedDescription)"
+            meaning = "翻译失败: \(error.localizedDescription)"
         }
     }
 
     func save() {
-        guard !original.isEmpty, !translation.isEmpty else { return }
+        let word = wordInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !word.isEmpty, !meaning.isEmpty else { return }
+
         let fm = FileManager.default
         let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first!
         let file = docs.appendingPathComponent("Translations.md")
@@ -37,11 +39,10 @@ final class TranslationStore: ObservableObject {
         formatter.dateFormat = "yyyy-MM-dd"
         let dateStr = formatter.string(from: Date())
 
-        var entry = "\n## \(dateStr)\n\n"
-        entry += "**原文:** \(original)\n\n"
-        entry += "**中文:** \(translation)\n\n"
-        if !translationExample.isEmpty {
-            entry += "**例子:** \(translationExample)\n\n"
+        var entry = "\n## \(word)  `\(dateStr)`\n\n"
+        entry += "**释义:** \(meaning)\n\n"
+        if !example.isEmpty {
+            entry += "**例句:** \(example)\n\n"
         }
         entry += "---\n"
 
@@ -53,12 +54,20 @@ final class TranslationStore: ObservableObject {
                 try? handle.close()
             }
         } else {
-            let header = "# Translations\n\n"
+            let header = "# 单词本\n\n"
             fm.createFile(atPath: file.path, contents: (header + entry).data(using: .utf8))
         }
-        savedMessage = "✅ 已保存到 Translations.md"
+
+        savedMessage = "✅ 已保存"
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
             self?.savedMessage = ""
         }
+    }
+
+    func clear() {
+        wordInput = ""
+        meaning = ""
+        example = ""
+        savedMessage = ""
     }
 }
